@@ -1,0 +1,41 @@
+#!/bin/sh
+
+pause=5
+spooldir=/var/spool/asterisk
+file=/usr/ftp/calls_im.txt
+
+lines=`cat $file`
+
+for line in $lines; do
+
+IFS=';' read -r -a array <<< "$line"
+
+# echo ${array[0]}
+# echo ${array[1]}
+# echo ${array[2]}
+
+callfile=${array[0]}${array[2]}
+
+# echo "Channel: Local/${array[0]}@out-zadarma-obzvon-baza
+echo "Channel: PJSIP/8${array[0]}@BEELINE_VRN
+MaxRetries: 3
+RetryTime: 600
+WaitTime: 60
+Context: obzvon
+Extension: 1256
+Callerid: <YOUR_CALLERID>
+Account: ${array[2]}
+SetVar: number=${array[0]}
+SetVar: razg=${array[1]}
+SetVar: zakaz=${array[2]}
+Priority: 1"  > $spooldir/tmp/$callfile
+
+chmod 777 $spooldir/tmp/$callfile
+chown asterisk:asterisk $spooldir/tmp/$callfile
+mv $spooldir/tmp/$callfile $spooldir/outgoing
+
+sleep $pause
+
+done
+rm -f $file
+exit 0

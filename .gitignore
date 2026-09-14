@@ -1,0 +1,15 @@
+# Runtime call lists / order data — never commit real customer data
+calls*.txt
+*.raw
+tempfile*
+temp.txt
+
+# Call recordings
+*.wav.orig
+records/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.bak
+*.swp

@@ -1,0 +1,54 @@
+#!/bin/sh
+
+pause=5
+spooldir=/var/spool/asterisk
+file=/usr/ftp/calls_im.txt
+
+# проверка существования файла
+if [ ! -f "$file" ]; then
+    echo "Ошибка: файл $file не найден!"
+    exit 1
+fi
+
+# общее количество строк в файле
+total=$(wc -l < "$file")
+echo "Начинаем обработку $total записей из $file"
+
+count=0
+lines=$(cat "$file")
+for line in $lines; do
+    count=$((count + 1))
+    IFS=';' read -r -a array <<< "$line"
+
+    callfile="${array[0]}${array[2]}"
+
+    # прогресс
+    echo "Обработка $count из $total: номер ${array[0]}, заказ ${array[2]}"
+
+    # формируем содержимое call файла
+    {
+        echo "Channel: PJSIP/8${array[0]}@BEELINE_VRN"
+        echo "MaxRetries: 3"
+        echo "RetryTime: 600"
+        echo "WaitTime: 60"
+        echo "Context: obzvon"
+        echo "Extension: 1256"
+        echo "Callerid: <YOUR_CALLERID>"
+        echo "Account: ${array[2]}"
+        echo "SetVar: number=${array[0]}"
+        echo "SetVar: razg=${array[1]}"
+        echo "SetVar: zakaz=${array[2]}"
+        echo "Priority: 1"
+    } > "$spooldir/tmp/$callfile"
+
+    chmod 777 "$spooldir/tmp/$callfile"
+    chown asterisk:asterisk "$spooldir/tmp/$callfile"
+    mv "$spooldir/tmp/$callfile" "$spooldir/outgoing"
+
+    echo "  -> создан и перемещён $callfile"
+    sleep $pause
+done
+
+rm -f "$file"
+echo "Обработка завершена, файл $file удалён."
+exit 0
